@@ -10,7 +10,7 @@ import {
 
 import { MAIN_GREEN , AVENIR, SIZE_FONT, 
   BUTTON_HEIGHT, BUTTON_WIDTH, RADIUS, MAIN_ORANGE, MAIN_GRAY} from '../constants/colors'
-import { SIGNUP_ROUTE, WELCOME_ROUTE } from '../constants/route'
+import { SIGNUP_ROUTE, WELCOME_ROUTE, HOME_ROUTE } from '../constants/route'
 
 import axios from 'axios'
 
@@ -91,8 +91,13 @@ const Login = () => {
 
   const trylog = async () => {
     const { status } = await axios.post('/profile/loggedin', { username, password })
-    console.log(username, password)
-    if (status == 200) {
+    console.log(status)
+    const data  = await axios.post('/spotify/refresh_token', { username })
+    console.log(data)
+    const authorize = data.status
+    
+    
+    if (status == 200 && authorize == 200) {
       setState('loggedin')
     } else {
       window.alert('failed to log in!')

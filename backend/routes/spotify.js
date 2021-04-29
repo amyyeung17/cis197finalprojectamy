@@ -20,23 +20,68 @@ const url = ''
 const scopes = ['user-follow-read','user-read-recently-played',
  'user-top-read', 'user-library-read', 'user-read-email', 'user-follow-read']
 
+let c = ''
+let d = ''
+let credentials = ({
+  clientId: c,
+  clientSecret: d,
+  redirectUri: 'http://localhost:3000/spotify/callback'
+})
 
+let spotifyApi = new SpotifyWebApi(credentials)
 
+router.get('/get', async (req, res, next) => {
+  const { results } = req.body
+  console.log(results)
+  if (results != undefined) {
+    res.send(results)
+  }
+})
 
-router.post('/logins', (req, res, next) => {
-  const c = req.body.client_id
-  const d = req.body.client_secret
+ router.get('/current', async(req, res, next) => {
+   PostSong.find({}, (err, songs) => {
+     res.send(songs)
+   })
+ })
+
+ router.post('/update', async(req, res, next) => {
+  const { username, songs } = req.body
+  console.log(username, songs)
+  try{
+    await PostSong.create({ username, songs })   
+  } catch(err) {
+    next(err)
+  }
+ })
+
+router.post('/logins', async (req, res, next) => {
+  c = req.body.client_id
+  d = req.body.client_secret
+  const { username } = req.session
 
     try {
-    const credentials = {
-      clientId: c,
-      clientSecret: d,
-      redirectUri: 'http://localhost:3000/callback'
-    }
-    const spotifyApi = new SpotifyWebApi(credentials)
-    const url = spotifyApi.createAuthorizeURL(scopes, stateKey)
-   
-  
+      credentials = ({
+        clientId: c,
+        clientSecret: d,
+        redirectUri: 'http://localhost:3000/spotify/callback'
+     })
+      spotifyApi = new SpotifyWebApi(credentials)
+      const url = spotifyApi.createAuthorizeURL(scopes, stateKey)
+
+      req.session.node = spotifyApi
+
+      Spotifyuser.findOne({username}, (err, user) => {
+        if (user) {
+          const { _id } = user
+          Spotifyuser.findOneAndUpdate({ _id },{client_id: c, client_secret: d}, {upsert:true}, (err, user) => {
+            if(err) {
+              next(err)
+            }
+          })
+        } else {
+          next(err)
+        }
+      })
     res.send(url)
   } catch {
     next(new Error('failed!'))
@@ -44,34 +89,105 @@ router.post('/logins', (req, res, next) => {
   
 })
 
-router.post('/',  async(req, res) => {
-  const { code,d} = req.body
-  console.log({d})
+router.post('/callback',  async (req, res, next) => {
+  const { code } = req.body
 
+  const username = req.session.username
+
+
+  try {
+    const t = await spotifyApi.authorizationCodeGrant(code)
+    const { access_token, refresh_token } = t.body
+    spotifyApi.setAccessToken(access_token)
+    spotifyApi.setRefreshToken(refresh_token)
+    req.session.access_token = access_token
+    
+    await Spotifyuser.findOne({username}, (err, user) => {
+      if (user) {
+        const { _id } = user
+        Spotifyuser.findOneAndUpdate({ _id },{refresh_token}, {upsert:true}, (err, user) => {
+          if(err) {
+            next(err)
+          }
+        })
+      } else {
+        next(err)
+      }
+    })
+  res.session.node = spotifyApi
+  } catch {
+    next(new Error('Could not set the tokens!'))
+  }
 })
 
-router.get('/refresh_token', (req, res) => {
 
-  // requesting access token from refresh token
-  const refresh_token = req.query.refresh_token;
-  const authOptions = {
-    url: 'https://accounts.spotify.com/api/token',
-    headers: { 'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')) },
-    form: {
-      grant_type: 'refresh_token',
-      refresh_token: refresh_token
-    },
-    json: true
+router.post('/refresh_token', async (req, res, next) => {
+  const { username } = req.body
+
+  try {
+    await Spotifyuser.findOne({username}, (err, user) => {
+      if (user) {
+        const { client_id, client_secret, refresh_token } = user
+        credentials = ({
+          clientId: client_id,
+          clientSecret: client_secret,
+        })
+        spotifyApi = new SpotifyWebApi(credentials)
+        spotifyApi.setRefreshToken(refresh_token)
+      } else {
+        next(err)
+      }
+    })
+    
+
+    const x = await spotifyApi.refreshAccessToken()
+    const { access_token, refresh_token } = x.body
+    spotifyApi.setAccessToken(access_token)
+    req.session.access_token = access_token
+    req.session.node = spotifyApi
+    res.send('success!')
+  } catch (err) {
+    next(err)
   }
+})
 
-  request.post(authOptions, function(error, response, body) {
-    if (!error && response.statusCode === 200) {
-      const access_token = body.access_token
-      res.send({
-        'access_token': access_token
-      })
+router.post('/search', async (req, res, next) => {
+
+  const { username, search, choice } = req.body
+  req.session.results = ''
+  console.log(choice)
+  try {
+    await Spotifyuser.findOne({username}, (err, user) => {
+      if (user) {
+        const { client_id, client_secret, refresh_token} = user
+        credentials = ({
+          clientId: client_id,
+          clientSecret: client_secret,
+        })
+        spotifyApi = new SpotifyWebApi(credentials)
+        spotifyApi.setAccessToken(req.session.access_token)
+      }
+    })
+
+    if (choice === 'Search') {
+      const x = await spotifyApi.searchTracks(search, {limit : 30})
+      res.send(x.body.tracks.items)
     }
-  })
+
+    if (choice === 'Artists') {
+      const y = await spotifyApi.searchArtists(search, {limit: 30})
+      res.send(y.body.artists.items)
+    }
+
+    if (choice === 'New Releases') {
+      const z = await spotifyApi.getNewReleases({limit : 30, country: 'US'})
+      res.send(z.body.albums.items)
+    }
+
+  } catch (err) {
+    console.log(err)
+    next(new Error('could not display'))
+  }
 })
 
 module.exports = router

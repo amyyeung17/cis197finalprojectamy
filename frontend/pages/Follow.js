@@ -10,7 +10,7 @@ import {
 import { MAIN_GREEN , AVENIR, SIZE_FONT, 
   BUTTON_HEIGHT, BUTTON_WIDTH, RADIUS, MAIN_ORANGE, MAIN_GRAY} from '../constants/colors'
 
-import { HOME_ROUTE, PROFILE_ROUTE, SETTINGS_ROUTE } from '../constants/route'
+import { HOME_ROUTE, PROFILE_ROUTE, SETTINGS_ROUTE, WELCOME_ROUTE } from '../constants/route'
 
 import axios from 'axios'
 
@@ -85,7 +85,6 @@ const Divideprofile2 = s.div`
   width: 100%;
   height: 600px;
   z-index: -5;
-  border: solid 1px black;
 `
 
 const Divideprofile3 = s.div`
@@ -121,12 +120,12 @@ const Input2 = s.input`
   margin-left: 10px;
   margin-bottom: 15px;
 `
-const Profilepic = s.div`
+const Profilepic = s.button`
   border: solid ${ MAIN_ORANGE };
-  width: 300px; 
-  height: 300px;
-  z-index:3;
-  margin-top: 10px
+  width: 400px; 
+  height: 400px;
+  margin-bottom: 20px;
+  justify-content: center;
 `
 const Texts4 = s.h3`
   font-family: ${ AVENIR };
@@ -147,6 +146,14 @@ const Box = s.div`
   flex-direction: column;
 `
 
+const Banner3 = s.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-content: space-evenly;
+  flow-direction: row;
+`
+
 const Follow = () => {
   const [username, setUsername] = useState('')
   const [name, setName] = useState('')
@@ -160,6 +167,8 @@ const Follow = () => {
   const [profilepic , setPicture] = useState('')
   const [artist, setArtist] = useState('')
   const [genre , setGenre] = useState('')
+  const [user , setUser] = useState('')
+  const [results, setResults] = useState([])
   const history = useHistory()
 
   const z = useParams()
@@ -180,6 +189,23 @@ const Follow = () => {
       setArtist(artist)
       setGenre(genre)
     }
+
+  }, [])
+
+  useEffect(() => {
+    const intervalID = setInterval(() => {
+      const actual = []
+      const showsongs = async () => {
+        const { data } = await axios.get('/spotify/current')
+        data.forEach(i => {
+          actual.push(i)
+        })
+        setResults(actual)
+      }
+      showsongs()
+    }, 2000)
+
+    return () => clearInterval(intervalID)
   }, [])
 
   useEffect(async () =>{
@@ -192,7 +218,26 @@ const Follow = () => {
     if (state == 'settings') {
       history.push(SETTINGS_ROUTE + `/${username}`)
     }
+
+    if (state == 'go') {
+      history.push(PROFILE_ROUTE + `/${user}`)
+    }
+
+    if (state == 'logout') {
+      history.push(WELCOME_ROUTE)
+    }
   }, [state])
+
+  const tryout = async () => {
+    const { status } = await axios.post('/profile/logout', { username, password })
+    if (status == 200) {
+      setState('logout')
+    } else {
+      window.alert('failed to logout')
+    }
+  }
+
+
 
   return(
     <>
@@ -204,11 +249,35 @@ const Follow = () => {
           <ButtonAgain2 onClick={() => setState('follows')}> Friends </ButtonAgain2>
           <ButtonAgain2 onClick={() => setState('home')}> Home </ButtonAgain2>
           <ButtonAgain2 onClick={() => setState('settings')}> Settings </ButtonAgain2>
-          <ButtonAgain2 onClick={() => setState('logout')}> Log out </ButtonAgain2>  
+          <ButtonAgain2 onClick={() => tryout()}> Log out </ButtonAgain2>  
       </Banner2>
-    <Divideprofile2 >
- 
-    </Divideprofile2>
+
+    <Banner3>
+        {results.map((r, index) => {
+          {console.log(r.username)}
+           return(  
+            <> 
+              <Profilepic style={{alignContent: 'space-evenly', flexWrap: 'wrap', flexBasis:'auto'}}
+              onClick={() => {setUser(r.username); setState('go')}}>
+                <SecondTitle1 key={index.uniqueId} style={{fontSize:32}}> {r.songs[0].name}</SecondTitle1> 
+                  
+                  {(r.songs[0].artists != undefined) ? r.songs[0].artists.map(x => {
+                   return(
+                      <>
+                        <SecondTitle1 key={index.uniqueId} style={{fontSize:20, marginTop:'3px'}}> {x.name}</SecondTitle1> 
+                      </>
+                   )}): null}
+                   {(r.songs[0].genres != undefined) ?
+                          <>
+                            <SecondTitle1 key={index.uniqueId} style={{fontSize:20}}> {r.songs[0].genres}</SecondTitle1>
+                          </>    
+                  : null}
+               <SecondTitle1 style={{fontSize:20, marginTop:'10px'}}> Listener: {r.username}</SecondTitle1>
+              </Profilepic>
+            </>     
+           )  
+        })}
+        </Banner3>
   
 </>
   )

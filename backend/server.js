@@ -26,7 +26,7 @@ http.createServer(function(request, response) {
 
 
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/finalproject197final2'
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/finalproject197final'
 
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,

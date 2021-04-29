@@ -68866,7 +68866,7 @@ const Login = () => {
     }
 
     if (state == 'loggedin') {
-      history.push(HOME_ROUTE);
+      history.push(_route.HOME_ROUTE);
     }
   }, [state]);
 
@@ -68877,9 +68877,14 @@ const Login = () => {
       username,
       password
     });
-    console.log(username, password);
+    console.log(status);
+    const data = await _axios.default.post('/spotify/refresh_token', {
+      username
+    });
+    console.log(data);
+    const authorize = data.status;
 
-    if (status == 200) {
+    if (status == 200 && authorize == 200) {
       setState('loggedin');
     } else {
       window.alert('failed to log in!');
@@ -91222,7 +91227,7 @@ const Profile = ({
       history.push(_route.SETTINGS_ROUTE + `/${username}`);
     }
   }, [state]);
-  return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(Banner, null, /*#__PURE__*/_react.default.createElement(SecondTitle1, null, " My Profile ")), /*#__PURE__*/_react.default.createElement(Banner2, {
+  return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(Banner, null, /*#__PURE__*/_react.default.createElement(SecondTitle1, null, " ", name, "'s Profile ")), /*#__PURE__*/_react.default.createElement(Banner2, {
     style: {
       marginLeft: '357px'
     }
@@ -91249,7 +91254,7 @@ const Profile = ({
     style: {
       margin: '-5px'
     }
-  }, " ", username, " ")), /*#__PURE__*/_react.default.createElement(Divideprofile3, null, /*#__PURE__*/_react.default.createElement(Divideprofile4, null, /*#__PURE__*/_react.default.createElement(Texts4, null, " Email: "), /*#__PURE__*/_react.default.createElement(Texts4, null, " Spotify User:"), /*#__PURE__*/_react.default.createElement(Texts4, null, " Profile Pic: "), /*#__PURE__*/_react.default.createElement(Texts4, null, " Description: "), /*#__PURE__*/_react.default.createElement(Texts4, null, " Favorite Artist: "), /*#__PURE__*/_react.default.createElement(Texts4, null, " Favorite Genre: "))), /*#__PURE__*/_react.default.createElement(Divideprofile1, null, /*#__PURE__*/_react.default.createElement(Divideprofile4, null, /*#__PURE__*/_react.default.createElement(Texts4, null, " ", email, " "), /*#__PURE__*/_react.default.createElement(Texts4, null, " Placeholder "), /*#__PURE__*/_react.default.createElement(Texts4, null, " ", link, " "), /*#__PURE__*/_react.default.createElement(Texts4, null, " ", profilepic, " "), /*#__PURE__*/_react.default.createElement(Texts4, {
+  }, " ", username, " ")), /*#__PURE__*/_react.default.createElement(Divideprofile3, null, /*#__PURE__*/_react.default.createElement(Divideprofile4, null, /*#__PURE__*/_react.default.createElement(Texts4, null, " Email: "), /*#__PURE__*/_react.default.createElement(Texts4, null, " Spotify User:"), /*#__PURE__*/_react.default.createElement(Texts4, null, " Description: "), /*#__PURE__*/_react.default.createElement(Texts4, null, " Favorite Artist: "), /*#__PURE__*/_react.default.createElement(Texts4, null, " Favorite Genre: "))), /*#__PURE__*/_react.default.createElement(Divideprofile1, null, /*#__PURE__*/_react.default.createElement(Divideprofile4, null, /*#__PURE__*/_react.default.createElement(Texts4, null, " ", email, " "), /*#__PURE__*/_react.default.createElement(Texts4, null, " Placeholder "), /*#__PURE__*/_react.default.createElement(Texts4, null, " ", link, " "), /*#__PURE__*/_react.default.createElement(Texts4, {
     style: {
       fontSize: '28px'
     }
@@ -91329,6 +91334,13 @@ const Banner2 = _styledComponents.default.div`
   align-items: center;
   flow-direction: row;
 `;
+const Banner3 = _styledComponents.default.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-content: space-evenly;
+  flow-direction: row;
+`;
 const Divideprofile = _styledComponents.default.div`
   display: flex; 
   flex-direction: column;
@@ -91386,13 +91398,6 @@ const Input2 = _styledComponents.default.input`
   margin-left: 10px;
   margin-bottom: 15px;
 `;
-const Profilepic = _styledComponents.default.div`
-  border: solid ${_colors.MAIN_ORANGE};
-  width: 300px; 
-  height: 300px;
-  z-index:3;
-  margin-top: 10px
-`;
 const Texts4 = _styledComponents.default.h3`
   font-family: ${_colors.AVENIR};
   color: ${_colors.MAIN_GRAY};
@@ -91402,28 +91407,41 @@ const Texts4 = _styledComponents.default.h3`
   margin-left: 10px;
   margin-bottom: 20px;
 `;
+const Profilepic = _styledComponents.default.button`
+  border: solid ${_colors.MAIN_ORANGE};
+  width: 400px; 
+  height: 400px;
+  margin-bottom: 20px;
+  justify-content: center;
+`;
 
 const Homepage = ({
   s
 }) => {
   const [state, setState] = (0, _react.useState)('');
   const [username, setUsername] = (0, _react.useState)('');
+  const [password, setPassword] = (0, _react.useState)('');
+  const [search, setSearch] = (0, _react.useState)('');
+  const [choice, setChoice] = (0, _react.useState)('');
+  const [results, setResults] = (0, _react.useState)([]);
+  const [songs, setSong] = (0, _react.useState)([]);
   const history = (0, _reactRouterDom.useHistory)();
   (0, _react.useEffect)(async () => {
     const {
       data
     } = await _axios.default.get(`/profile/`);
     setUsername(data.username);
-    const location = window.location.search;
-    const p = new URLSearchParams(location);
-    const code = p.get('code');
-    const f = await _axios.default.get(`/profile/${username}`);
-    const d = f.data;
-    const params = await _axios.default.post('/spotify/', {
-      code,
-      username,
-      d
-    });
+
+    if (data.access_token == undefined) {
+      const node = data.spotifyApi;
+      const location = window.location.search;
+      const p = new URLSearchParams(location);
+      const code = p.get('code');
+      const params = await _axios.default.post('/spotify/callback', {
+        code,
+        username
+      });
+    }
   }, []);
   (0, _react.useEffect)(async () => {
     if (state == 'profile') {
@@ -91435,7 +91453,7 @@ const Homepage = ({
     }
 
     if (state == 'logout') {
-      history.push('/logout');
+      history.push(_route.WELCOME_ROUTE);
     }
 
     if (state == 'home') {
@@ -91446,6 +91464,55 @@ const Homepage = ({
       history.push(_route.SETTINGS_ROUTE + `/${username}`);
     }
   }, [state]);
+
+  const tryout = async () => {
+    const {
+      status
+    } = await _axios.default.post('/profile/logout', {
+      username,
+      password
+    });
+
+    if (status == 200) {
+      setState('logout');
+    } else {
+      window.alert('failed to logout');
+    }
+  };
+
+  const searcha = async () => {
+    const {
+      status,
+      data
+    } = await _axios.default.post('/spotify/search', {
+      username,
+      search,
+      choice
+    });
+    const r = [];
+    const l = [];
+    data.forEach(i => {
+      r.push(i);
+    });
+    setResults(r);
+    setState('');
+  };
+
+  const update = async () => {
+    const {
+      status
+    } = await _axios.default.post('/spotify/update', {
+      username,
+      songs
+    });
+
+    if (status == 200) {
+      console.log('updated!');
+    } else {
+      window.alert('failed to logout');
+    }
+  };
+
   return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(Banner, null, /*#__PURE__*/_react.default.createElement(SecondTitle1, null, " Welcome back ", username, " ")), /*#__PURE__*/_react.default.createElement(Banner2, null, /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
     onClick: () => {
       setState('profile');
@@ -91457,8 +91524,66 @@ const Homepage = ({
   }, " Home "), /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
     onClick: () => setState('settings')
   }, " Settings "), /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
-    onClick: () => setState('logout')
-  }, " Log out ")));
+    onClick: () => tryout()
+  }, " Log out ")), /*#__PURE__*/_react.default.createElement(Banner, {
+    style: {
+      marginLeft: '-10px'
+    }
+  }, /*#__PURE__*/_react.default.createElement(Input2, {
+    value: search,
+    onChange: e => setSearch(e.target.value),
+    style: {
+      borderColor: _colors.MAIN_GREEN,
+      width: '600px'
+    }
+  })), /*#__PURE__*/_react.default.createElement(Banner2, null, /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
+    onClick: () => {}
+  }, " Search: "), /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
+    onClick: () => {
+      setChoice('Search');
+      searcha();
+    }
+  }, "  All "), /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
+    onClick: () => {
+      setChoice('Artists');
+      searcha();
+    }
+  }, " Artists "), /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
+    onClick: () => {
+      setChoice('New Releases');
+      searcha();
+    }
+  }, " Popular ")), /*#__PURE__*/_react.default.createElement(Banner3, null, results.map((r, index) => {
+    return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(Profilepic, {
+      style: {
+        alignContent: 'space-evenly',
+        flexWrap: 'wrap',
+        flexBasis: 'auto'
+      },
+      onClick: () => {
+        setSong(r);
+        update();
+      }
+    }, /*#__PURE__*/_react.default.createElement(SecondTitle1, {
+      key: index.uniqueId,
+      style: {
+        fontSize: 32
+      }
+    }, " ", r.name), r.artists != undefined ? r.artists.map(x => {
+      return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(SecondTitle1, {
+        key: index.uniqueId,
+        style: {
+          fontSize: 20,
+          marginTop: '3px'
+        }
+      }, " ", x.name));
+    }) : null, r.genres != undefined ? /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(SecondTitle1, {
+      key: index.uniqueId,
+      style: {
+        fontSize: 20
+      }
+    }, " ", r.genres)) : null));
+  })));
 };
 
 var _default = Homepage;
@@ -91557,7 +91682,6 @@ const Divideprofile2 = _styledComponents.default.div`
   width: 100%;
   height: 600px;
   z-index: -5;
-  border: solid 1px black;
 `;
 const Divideprofile3 = _styledComponents.default.div`
   display: flex; 
@@ -91590,12 +91714,12 @@ const Input2 = _styledComponents.default.input`
   margin-left: 10px;
   margin-bottom: 15px;
 `;
-const Profilepic = _styledComponents.default.div`
+const Profilepic = _styledComponents.default.button`
   border: solid ${_colors.MAIN_ORANGE};
-  width: 300px; 
-  height: 300px;
-  z-index:3;
-  margin-top: 10px
+  width: 400px; 
+  height: 400px;
+  margin-bottom: 20px;
+  justify-content: center;
 `;
 const Texts4 = _styledComponents.default.h3`
   font-family: ${_colors.AVENIR};
@@ -91614,6 +91738,13 @@ const Box = _styledComponents.default.div`
   z-index:3;
   flex-direction: column;
 `;
+const Banner3 = _styledComponents.default.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-content: space-evenly;
+  flow-direction: row;
+`;
 
 const Follow = () => {
   const [username, setUsername] = (0, _react.useState)('');
@@ -91628,6 +91759,8 @@ const Follow = () => {
   const [profilepic, setPicture] = (0, _react.useState)('');
   const [artist, setArtist] = (0, _react.useState)('');
   const [genre, setGenre] = (0, _react.useState)('');
+  const [user, setUser] = (0, _react.useState)('');
+  const [results, setResults] = (0, _react.useState)([]);
   const history = (0, _reactRouterDom.useHistory)();
   const z = (0, _reactRouterDom.useParams)();
   (0, _react.useEffect)(async () => {
@@ -91660,6 +91793,24 @@ const Follow = () => {
       setGenre(genre);
     }
   }, []);
+  (0, _react.useEffect)(() => {
+    const intervalID = setInterval(() => {
+      const actual = [];
+
+      const showsongs = async () => {
+        const {
+          data
+        } = await _axios.default.get('/spotify/current');
+        data.forEach(i => {
+          actual.push(i);
+        });
+        setResults(actual);
+      };
+
+      showsongs();
+    }, 2000);
+    return () => clearInterval(intervalID);
+  }, []);
   (0, _react.useEffect)(async () => {
     if (state == 'home') {
       history.push(_route.HOME_ROUTE);
@@ -91672,7 +91823,31 @@ const Follow = () => {
     if (state == 'settings') {
       history.push(_route.SETTINGS_ROUTE + `/${username}`);
     }
+
+    if (state == 'go') {
+      history.push(_route.PROFILE_ROUTE + `/${user}`);
+    }
+
+    if (state == 'logout') {
+      history.push(WELCOME_ROUTE);
+    }
   }, [state]);
+
+  const tryout = async () => {
+    const {
+      status
+    } = await _axios.default.post('/profile/logout', {
+      username,
+      password
+    });
+
+    if (status == 200) {
+      setState('logout');
+    } else {
+      window.alert('failed to logout');
+    }
+  };
+
   return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(Banner, null, /*#__PURE__*/_react.default.createElement(SecondTitle1, null, " Follows ")), /*#__PURE__*/_react.default.createElement(Banner2, null, /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
     onClick: () => setState('profile')
   }, " Profile "), /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
@@ -91682,8 +91857,46 @@ const Follow = () => {
   }, " Home "), /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
     onClick: () => setState('settings')
   }, " Settings "), /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
-    onClick: () => setState('logout')
-  }, " Log out ")), /*#__PURE__*/_react.default.createElement(Divideprofile2, null));
+    onClick: () => tryout()
+  }, " Log out ")), /*#__PURE__*/_react.default.createElement(Banner3, null, results.map((r, index) => {
+    {
+      console.log(r.username);
+    }
+    return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(Profilepic, {
+      style: {
+        alignContent: 'space-evenly',
+        flexWrap: 'wrap',
+        flexBasis: 'auto'
+      },
+      onClick: () => {
+        setUser(r.username);
+        setState('go');
+      }
+    }, /*#__PURE__*/_react.default.createElement(SecondTitle1, {
+      key: index.uniqueId,
+      style: {
+        fontSize: 32
+      }
+    }, " ", r.songs[0].name), r.songs[0].artists != undefined ? r.songs[0].artists.map(x => {
+      return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(SecondTitle1, {
+        key: index.uniqueId,
+        style: {
+          fontSize: 20,
+          marginTop: '3px'
+        }
+      }, " ", x.name));
+    }) : null, r.songs[0].genres != undefined ? /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(SecondTitle1, {
+      key: index.uniqueId,
+      style: {
+        fontSize: 20
+      }
+    }, " ", r.songs[0].genres)) : null, /*#__PURE__*/_react.default.createElement(SecondTitle1, {
+      style: {
+        fontSize: 20,
+        marginTop: '10px'
+      }
+    }, " Listener: ", r.username)));
+  })));
 };
 
 var _default = Follow;
@@ -91847,6 +92060,7 @@ const Settings = ({
 }) => {
   const [username, setUsername] = (0, _react.useState)('');
   const [name, setName] = (0, _react.useState)('');
+  const [password, setPassword] = (0, _react.useState)('');
   const [email, setEmail] = (0, _react.useState)('');
   const [description, setDescription] = (0, _react.useState)('');
   const [edit, setEdit] = (0, _react.useState)(false);
@@ -91895,7 +92109,6 @@ const Settings = ({
   }, []);
   (0, _react.useEffect)(async () => {
     if (state == 'home') {
-      console.log(undefined);
       history.push(_route.HOME_ROUTE);
     }
 
@@ -91909,6 +92122,10 @@ const Settings = ({
 
     if (state == 'failed') {
       history.push(SETTINGS_ROUTE + `/${username}`);
+    }
+
+    if (state == 'logout') {
+      history.push(_route.HOME_ROUTE);
     }
   }, [state]);
 
@@ -91934,7 +92151,20 @@ const Settings = ({
     }
   };
 
-  const spotify = async () => {};
+  const tryout = async () => {
+    const {
+      status
+    } = await _axios.default.post('/profile/logout', {
+      username,
+      password
+    });
+
+    if (status == 200) {
+      setState('logout');
+    } else {
+      window.alert('failed to logout');
+    }
+  };
 
   return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(Banner, null, /*#__PURE__*/_react.default.createElement(SecondTitle1, null, " Settings ")), /*#__PURE__*/_react.default.createElement(Banner2, null, /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
     onClick: () => {
@@ -91947,7 +92177,7 @@ const Settings = ({
   }, " Home "), /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
     onClick: () => setState('settings')
   }, " Settings "), /*#__PURE__*/_react.default.createElement(ButtonAgain2, {
-    onClick: () => setState('logout')
+    onClick: () => tryout()
   }, " Log out ")), /*#__PURE__*/_react.default.createElement(Divideprofile2, null, /*#__PURE__*/_react.default.createElement(Divideprofile, null, /*#__PURE__*/_react.default.createElement(Profilepic, null), /*#__PURE__*/_react.default.createElement(Texts4, null, " Name "), /*#__PURE__*/_react.default.createElement(Input2, {
     style: {
       width: '300px',
@@ -92937,13 +93167,8 @@ const SpotifyAdd = () => {
     const {
       status,
       data
-    } = await _axios.default.post('/spotify/logins', {
-      client_id,
-      client_secret,
-      username
-    });
+    } = await _axios.default.get('/spotify/get');
     setLink(data);
-    console.log(data);
 
     if (status == 200) {
       setA(!a);
@@ -92988,7 +93213,7 @@ const SpotifyAdd = () => {
   }), /*#__PURE__*/_react.default.createElement(_reactRouterDom.BrowserRouter, null), a ? /*#__PURE__*/_react.default.createElement(Texts2, {
     style: {
       position: 'absolute',
-      left: '865px',
+      left: '930px',
       top: '600px'
     }
   }, /*#__PURE__*/_react.default.createElement(ButtonAgain, {
@@ -93054,7 +93279,7 @@ const App = () => {
   }, /*#__PURE__*/_react.default.createElement(_CreateAccount.default, null)), /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
     path: "/creates"
   }, /*#__PURE__*/_react.default.createElement(_SpotifyAdd.default, null)), /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
-    path: "/callback"
+    path: "/spotify/callback"
   }, /*#__PURE__*/_react.default.createElement(_Homepage.default, null)), /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
     path: "/follows/:username"
   }, /*#__PURE__*/_react.default.createElement(_Follow.default, null)), /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
@@ -93108,7 +93333,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64188" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61633" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -55,6 +55,13 @@ const Banner2 = s.div`
   align-items: center;
   flow-direction: row;
 `
+const Banner3 = s.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-content: space-evenly;
+  flow-direction: row;
+`
 
 const Divideprofile = s.div`
   display: flex; 
@@ -118,13 +125,6 @@ const Input2 = s.input`
   margin-left: 10px;
   margin-bottom: 15px;
 `
-const Profilepic = s.div`
-  border: solid ${ MAIN_ORANGE };
-  width: 300px; 
-  height: 300px;
-  z-index:3;
-  margin-top: 10px
-`
 const Texts4 = s.h3`
   font-family: ${ AVENIR };
   color: ${ MAIN_GRAY};
@@ -134,23 +134,38 @@ const Texts4 = s.h3`
   margin-left: 10px;
   margin-bottom: 20px;
 `
+
+const Profilepic = s.button`
+  border: solid ${ MAIN_ORANGE };
+  width: 400px; 
+  height: 400px;
+  margin-bottom: 20px;
+  justify-content: center;
+`
 const Homepage = ({s}) => {
   const [state, setState] = useState('')
   const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [search, setSearch] = useState('')
+  const [choice, setChoice] = useState('')
+  const [results, setResults] = useState([])
+  const [songs, setSong] = useState([])
   const history = useHistory()
 
 
   useEffect(async () => { 
       const { data } = await axios.get(`/profile/`)
       setUsername(data.username)
-      const location = window.location.search
-      const p = new URLSearchParams(location)
-      const code = p.get('code')
-      const f = await axios.get(`/profile/${username}`)
-      const d = f.data
-      const params = await axios.post('/spotify/', { code, username, d})
+      if(data.access_token == undefined) {
+        const node = data.spotifyApi
+        const location = window.location.search
+        const p = new URLSearchParams(location)
+        const code = p.get('code')
+        const params = await axios.post('/spotify/callback', { code, username})
+      }
   }, [])
 
+  
   useEffect(async () => {
     if (state == 'profile') {
       history.push(PROFILE_ROUTE + `/${username}`)
@@ -160,7 +175,7 @@ const Homepage = ({s}) => {
     }
 
     if (state == 'logout') {
-      history.push('/logout')
+      history.push(WELCOME_ROUTE)
     }
 
     if (state == 'home') {
@@ -170,6 +185,35 @@ const Homepage = ({s}) => {
       history.push(SETTINGS_ROUTE + `/${username}`)
     }
   }, [state])
+
+  const tryout = async () => {
+    const { status } = await axios.post('/profile/logout', { username, password })
+    if (status == 200) {
+      setState('logout')
+    } else {
+      window.alert('failed to logout')
+    }
+  }
+
+  const searcha = async () => {
+    const {status, data} = await axios.post('/spotify/search', { username, search, choice })
+    const r = []
+    const l = []
+    data.forEach(i => {
+      r.push(i)
+    })
+    setResults(r)
+    setState('')
+  }
+
+  const update = async () => {
+    const { status } = await axios.post('/spotify/update', { username, songs })
+    if (status == 200) {
+      console.log('updated!')
+    } else {
+      window.alert('failed to logout')
+    }
+  }
 
 
 
@@ -184,8 +228,51 @@ const Homepage = ({s}) => {
           <ButtonAgain2 onClick={() => setState('follows')}> Friends </ButtonAgain2>
           <ButtonAgain2 onClick={() => setState('home')}> Home </ButtonAgain2>
           <ButtonAgain2 onClick={() => setState('settings')}> Settings </ButtonAgain2>
-          <ButtonAgain2 onClick={() => setState('logout')}> Log out </ButtonAgain2>  
+          <ButtonAgain2 onClick={() => tryout()}> Log out </ButtonAgain2>  
       </Banner2>
+      <Banner style={{marginLeft:'-10px'}}>
+        <Input2 value={search} onChange={e => setSearch(e.target.value)} style={{borderColor:MAIN_GREEN, width:'600px'}} /> 
+      </Banner>
+      <Banner2>
+          <ButtonAgain2 onClick={() => {}}> Search: </ButtonAgain2>
+          <ButtonAgain2 onClick={() => {setChoice('Search'); searcha()}}>  All </ButtonAgain2>
+          <ButtonAgain2 onClick={() => {setChoice('Artists'); searcha()}}> Artists </ButtonAgain2> 
+          <ButtonAgain2 onClick={() => {setChoice('New Releases'); searcha()}}> Popular </ButtonAgain2>
+          
+      </Banner2>
+
+      <Banner3>
+        {results.map((r, index) => {
+           return(  
+            <> 
+              <Profilepic style={{alignContent: 'space-evenly', flexWrap: 'wrap', flexBasis:'auto'}}
+              onClick={() => {setSong(r); update()}}>
+                <SecondTitle1 key={index.uniqueId} style={{fontSize:32}}> {r.name}</SecondTitle1> 
+                  
+                  {(r.artists != undefined) ? r.artists.map(x => {
+                   return(
+                      <>
+                        <SecondTitle1 key={index.uniqueId} style={{fontSize:20, marginTop:'3px'}}> {x.name}</SecondTitle1> 
+                      </>
+                   )}): null}
+                   {(r.genres != undefined) ?
+                          <>
+                            <SecondTitle1 key={index.uniqueId} style={{fontSize:20}}> {r.genres}</SecondTitle1>
+                          </>    
+                  : null}
+
+              </Profilepic>
+            </>     
+           )  
+        })}
+        </Banner3>
+    
+  
+
+    
+        
+
+    
 
 
       

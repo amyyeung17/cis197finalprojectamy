@@ -204,7 +204,7 @@ const Profile = ({ val }) => {
     <>
   
                 <Banner>
-                  <SecondTitle1> My Profile </SecondTitle1>
+                  <SecondTitle1> {name}'s Profile </SecondTitle1>
                 </Banner>
                 <Banner2 style={{marginLeft:'357px'}}>
                   <ButtonAgain2 onClick={() => setState('profile')}> Profile </ButtonAgain2>
@@ -225,7 +225,6 @@ const Profile = ({ val }) => {
                   <Divideprofile4 >
                     <Texts4> Email: </Texts4>
                     <Texts4> Spotify User:</Texts4>
-                    <Texts4> Profile Pic: </Texts4>
                     <Texts4> Description: </Texts4>
                     <Texts4> Favorite Artist: </Texts4>
                     <Texts4> Favorite Genre: </Texts4>
@@ -236,7 +235,6 @@ const Profile = ({ val }) => {
                     <Texts4> { email } </Texts4>
                     <Texts4> Placeholder </Texts4>
                     <Texts4> { link } </Texts4>
-                    <Texts4> { profilepic } </Texts4>
                     <Texts4 style={{fontSize:'28px'}}> { description } </Texts4>
                     <Texts4> { artist } </Texts4>
                     <Texts4> { genre } </Texts4>

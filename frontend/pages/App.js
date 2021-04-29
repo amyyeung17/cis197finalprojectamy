@@ -39,7 +39,7 @@ const App = () => {
           <Route path='/creates'>
             <SpotifyAdd />
           </Route>
-          <Route path='/callback'>
+          <Route path='/spotify/callback'>
             <Homepage />
           </Route>
           <Route path='/follows/:username'>

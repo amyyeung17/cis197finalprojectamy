@@ -95,10 +95,8 @@ const SpotifyAdd = () => {
 
   const trylog = async () => {
     const { username } = await axios.get('/profile/')
-    const { status, data } = await axios.post('/spotify/logins', { client_id, client_secret, username })
+    const { status, data } = await axios.get('/spotify/get')
     setLink(data)
-
-    console.log(data)
     if (status == 200) {
       setA(!a)
     } else {
@@ -124,7 +122,7 @@ const SpotifyAdd = () => {
           <Router>
         </Router>
         { a ? 
-            <Texts2 style={{position:'absolute', left:'865px', top: '600px'}}> 
+            <Texts2 style={{position:'absolute', left:'930px', top: '600px'}}> 
               <ButtonAgain onClick={() => window.open(link, '_blank')}>You can now authorize here! </ButtonAgain>
             </Texts2>
            : null}

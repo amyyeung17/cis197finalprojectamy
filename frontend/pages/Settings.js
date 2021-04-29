@@ -150,6 +150,7 @@ const Texts4 = s.h3`
 const Settings = ({ val }) => {
   const [username, setUsername] = useState('')
   const [name, setName] = useState('')
+  const [password, setPassword] = useState('')
   const [email, setEmail] = useState('')
   const [description, setDescription] = useState('')
   const [edit, setEdit] = useState(false)
@@ -189,7 +190,6 @@ const Settings = ({ val }) => {
 
   useEffect(async () =>{
     if (state == 'home') {
-      console.log(process.env.BROWSERSLIST_ENV)
       history.push(HOME_ROUTE)
     }
     if (state == 'follows'){
@@ -200,6 +200,9 @@ const Settings = ({ val }) => {
     }
     if (state == 'failed') {
       history.push(SETTINGS_ROUTE + `/${username}`)
+    }
+    if (state == 'logout') {
+      history.push(HOME_ROUTE)
     }
 
   }, [state])
@@ -216,10 +219,16 @@ const Settings = ({ val }) => {
       }
   }
 
-  const spotify = async () => {
 
-
+  const tryout = async () => {
+    const { status } = await axios.post('/profile/logout', { username, password })
+    if (status == 200) {
+      setState('logout')
+    } else {
+      window.alert('failed to logout')
+    }
   }
+
 
   return(
     <>
@@ -231,7 +240,7 @@ const Settings = ({ val }) => {
           <ButtonAgain2 onClick={() => setState('follows')}> Friends </ButtonAgain2>
           <ButtonAgain2 onClick={() => setState('home')}> Home </ButtonAgain2>
           <ButtonAgain2 onClick={() => setState('settings')}> Settings </ButtonAgain2>
-          <ButtonAgain2 onClick={() => setState('logout')}> Log out </ButtonAgain2>  
+          <ButtonAgain2 onClick={() => tryout()}> Log out </ButtonAgain2>  
       </Banner2>
     <Divideprofile2 >
     < Divideprofile>

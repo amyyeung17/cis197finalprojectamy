@@ -14,6 +14,7 @@ const spotifyuserSchema = new Schema({
   artist: String,
   client_id: String,
   client_secret: String,
+  refresh_token: String, 
 })
 
 module.exports = model('Spotifyuser', spotifyuserSchema)
